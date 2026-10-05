@@ -28,6 +28,7 @@ env/
 ENV/
 .env
 .env.*
+config.prod.yaml
 
 # IDE
 .vscode/

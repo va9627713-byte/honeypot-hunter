@@ -1,4 +1,4 @@
-# Production Docker Compose - Deploy to cloud VM with proper security
+# Production override: use only on a dedicated, isolated honeypot host.
 # Usage: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 
 services:
@@ -6,7 +6,7 @@ services:
     build:
       context: .
       args:
-        INSTALL_GEOIP: "true"
+        INSTALL_GEOIP: ${INSTALL_GEOIP:-false}
     restart: unless-stopped
     read_only: true
     tmpfs:
@@ -14,7 +14,7 @@ services:
       - /var/run
     volumes:
       - honeypot-logs:/app/logs
-      - ./config.prod.yaml:/app/config.yaml:ro
+      - ./config.prod.yaml:/app/docker-config.yaml:ro
       # Optional: GeoIP database
       # - ./GeoLite2-City.mmdb:/geo/GeoLite2-City.mmdb:ro
       # Optional: SSH host key for consistent identity
@@ -69,7 +69,7 @@ services:
     build:
       context: .
       args:
-        INSTALL_GEOIP: "true"
+        INSTALL_GEOIP: ${INSTALL_GEOIP:-false}
     command: ["python", "dashboard.py", "--host", "0.0.0.0", "--port", "8765"]
     restart: unless-stopped
     read_only: true
@@ -77,9 +77,8 @@ services:
       - /tmp
     volumes:
       - honeypot-logs:/app/logs:ro
-      - ./config.prod.yaml:/app/config.yaml:ro
     ports:
-      - "8765:8765"
+      - "127.0.0.1:8765:8765"
     security_opt:
       - no-new-privileges:true
     cap_drop:
@@ -128,27 +127,9 @@ services:
           cpus: '1'
           memory: 2G
 
-  # Optional: Redis for distributed event buffering
-  redis:
-    image: redis:7-alpine
-    restart: unless-stopped
-    volumes:
-      - redis-data:/data
-    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 3s
-      retries: 3
-
 volumes:
   honeypot-logs:
   ollama-models:
-  redis-data:
 
 networks:
   default:

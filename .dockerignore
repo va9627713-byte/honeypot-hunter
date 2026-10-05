@@ -4,4 +4,6 @@ __pycache__
 logs
 *.db
 *.jsonl
+*.backup
+config.prod.yaml
 .git

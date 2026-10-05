@@ -1,0 +1,68 @@
+# Supported runtime configuration for the production Compose override.
+# Copy this file to config.prod.yaml, review it, and keep that local file out
+# of version control. Never put real webhook credentials in a committed file.
+bind_host: 0.0.0.0
+max_connections: 100
+max_request_headers: 100
+rate_limit_connections: 30
+rate_limit_window_seconds: 60
+max_rate_limit_sources: 10000
+geoip_db_path: null
+alert_webhook: null
+alert_event_types:
+  - auth_success_fake
+  - http_exploit_attempt
+  - payload_upload
+  - docker.command
+  - kubernetes.command
+  - escape_attempt
+auto_block_score: 0
+max_session_seconds: 60
+fake_login_fail_count: 3
+system_seed: null
+enable_mitre_tagging: true
+anti_pollution: true
+pollution_threshold: 100
+randomize_banners: true
+sandbox_submit_url: null
+sandbox_auth_token_env: null
+llm_enabled: false
+llm_endpoint: http://ollama:11434/api/generate
+llm_model: qwen2.5:3b
+max_sample_size: 2097152
+services:
+  ssh:
+    enabled: true
+    port: 2222
+    real_ssh: true
+    credential_retention: hashed
+  telnet:
+    enabled: true
+    port: 2323
+  ftp:
+    enabled: true
+    port: 2121
+  http:
+    enabled: true
+    port: 8080
+  mysql:
+    enabled: true
+    port: 3306
+  redis:
+    enabled: true
+    port: 6379
+  smtp:
+    enabled: true
+    port: 2525
+  docker:
+    enabled: true
+    port: 2375
+  kubernetes:
+    enabled: true
+    port: 6443
+  modbus:
+    enabled: true
+    port: 1502
+  mqtt:
+    enabled: true
+    port: 1883

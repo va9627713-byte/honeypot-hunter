@@ -9,12 +9,7 @@ description = "Custom multi-service honeypot with threat intelligence logging"
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.11"
-authors = [
-    {name = "Honeypot Hunter Contributors", email = "security@honeypot-hunter.example.com"}
-]
-maintainers = [
-    {name = "Honeypot Hunter Maintainers", email = "maintainers@honeypot-hunter.example.com"}
-]
+authors = [{name = "va9627713-byte"}]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Information Technology",
@@ -37,8 +32,8 @@ classifiers = [
 ]
 dependencies = [
     "pyyaml>=6.0,<7",
-    "asyncssh>=2.14,<3",
-    "cryptography>=42.0,<43",
+    "asyncssh>=2.24.0,<3",
+    "cryptography>=50.0.0,<51",
 ]
 
 [project.optional-dependencies]
@@ -61,6 +56,11 @@ docs = ["mkdocs-material>=9.0,<10", "mkdocstrings[python]>=0.24,<1"]
 llm = ["httpx>=0.25,<1"]
 sandbox = ["aiohttp>=3.8,<4"]
 all = ["geoip2>=4.8,<5", "httpx>=0.25,<1", "aiohttp>=3.8,<4"]
+
+[project.urls]
+Homepage = "https://github.com/va9627713-byte/honeypot-hunter"
+Repository = "https://github.com/va9627713-byte/honeypot-hunter"
+Issues = "https://github.com/va9627713-byte/honeypot-hunter/issues"
 
 [project.scripts]
 honeypot = "honeypot:main"

@@ -17,6 +17,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, Mock, patch
 
 import asyncssh
+import yaml
 
 from artifact_analysis import _NoRedirectHandler as SandboxNoRedirectHandler
 from artifact_analysis import analyze_sample, submit_to_sandbox
@@ -222,6 +223,32 @@ class ConfigHardeningTests(unittest.TestCase):
             with self.subTest(filename=filename):
                 config = load_config(str(Path(__file__).with_name(filename)))
                 self.assertTrue(config["randomize_banners"])
+
+    def test_production_example_uses_supported_runtime_schema(self):
+        config = load_config(
+            str(Path(__file__).with_name("docker-config.prod.example.yaml"))
+        )
+
+        self.assertEqual(config["bind_host"], "0.0.0.0")
+        self.assertEqual(config["services"]["ssh"]["credential_retention"], "hashed")
+        self.assertFalse(config["llm_enabled"])
+
+    def test_production_compose_keeps_dashboard_private(self):
+        compose_path = Path(__file__).with_name("docker-compose.prod.yml")
+        compose = yaml.safe_load(compose_path.read_text(encoding="utf-8"))
+        dashboard = compose["services"]["dashboard"]
+        honeypot = compose["services"]["honeypot"]
+
+        self.assertIn("127.0.0.1:8765:8765", dashboard["ports"])
+        self.assertNotIn("8765:8765", dashboard["ports"])
+        self.assertIn(
+            "./config.prod.yaml:/app/docker-config.yaml:ro",
+            honeypot["volumes"],
+        )
+        for ignore_file in (".gitignore", ".dockerignore"):
+            with self.subTest(ignore_file=ignore_file):
+                ignored = Path(__file__).with_name(ignore_file).read_text(encoding="utf-8")
+                self.assertIn("config.prod.yaml", ignored)
 
     def test_defaults_bind_to_loopback_and_merge_service_options(self):
         with tempfile.TemporaryDirectory() as temp_dir:

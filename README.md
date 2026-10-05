@@ -6,6 +6,10 @@ them, and turns that activity into structured threat intelligence: per-IP
 risk scores, a credential-attempt table, and an exportable IOC (Indicator
 of Compromise) feed.
 
+**Project site:** [va9627713-byte.github.io/honeypot-hunter](https://va9627713-byte.github.io/honeypot-hunter/)  
+The Pages site is static project information only; it does not run this Python
+application or display live honeypot events.
+
 The platform includes optional offline GeoIP enrichment, webhook alerts,
 per-source rate limiting, a persistent local denylist, MITRE ATT&CK event tags,
 behavior clustering, a read-only live dashboard, and a loopback-only attack
@@ -151,6 +155,19 @@ python3 dashboard.py                  # http://127.0.0.1:8765
 python3 check_ports.py --config config.yaml
 ```
 
+## Free project website
+
+The static project site is in `docs/`. GitHub Actions publishes that directory
+to GitHub Pages when changes are pushed to `main` (or when the workflow is
+manually run). In the repository settings, choose **Settings → Pages →
+GitHub Actions** as the build and deployment source. The expected project URL
+is `https://va9627713-byte.github.io/honeypot-hunter/`.
+
+GitHub Pages serves static files only. It does not run the honeypot, the Python
+dashboard, or a database. Never publish logs, captured indicators, credentials,
+configuration secrets, or a live dashboard as part of the Pages site. Keep
+public honeypot listeners on a separate, dedicated and firewalled host.
+
 Listeners bind to `127.0.0.1` by default. Set `bind_host: 0.0.0.0` only when
 you deliberately intend to expose the service from a dedicated, firewalled
 honeypot host. Configure a firewall to restrict outbound traffic: this tool
@@ -208,8 +225,34 @@ scanner/bot traffic (which is the point of a honeypot), either:
 - Run it on a low-cost cloud VM with **no other services**, and forward
   the standard ports to it (22→2222, 23→2323, 21→2121, 80→8080) with
   `iptables`/security-group rules, or
-- Run the process as root and change `config.yaml` ports directly to
-  22/23/21/80.
+- Run the process on a dedicated isolated host with the required low-port
+  capabilities and change the configured ports directly.
+
+Do not deploy this on a host containing valuable workloads or management
+services. The production Compose override publishes the honeypot listeners
+on host ports, including ports 22 and 80; check for host-port conflicts and
+restrict ingress and egress with a separately tested host/cloud firewall.
+The app does not enforce egress isolation.
+
+For the production Compose override, first create the runtime config from the
+supported example and review it:
+```bash
+cp docker-config.prod.example.yaml config.prod.yaml
+```
+Keep `config.prod.yaml` out of version control and replace the example alert
+webhook only through a secret-managed local configuration. Start with:
+```bash
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
+```
+The dashboard is bound to host loopback at `127.0.0.1:8765`; it has no
+built-in authentication or TLS. Access it locally, through an SSH tunnel, or
+through a separately configured reverse proxy that enforces authentication
+and TLS. Do not change the dashboard port binding to a public interface.
+For SSH-tunnel access, run this from your workstation:
+```bash
+ssh -L 8765:127.0.0.1:8765 user@honeypot-host
+```
+Then open `http://127.0.0.1:8765` locally.
 
 For isolated local evaluation, `docker compose up --build` starts the honeypot
 and dashboard with all eleven emulated services. Every host-published port is bound to `127.0.0.1`; only change
@@ -243,9 +286,11 @@ about shipped functionality:
 - **Research and education:** the loopback-only simulator and synthetic state
   support local demonstrations. Named reproducible scenarios, seeded runs,
   and machine-readable lab results remain future work.
-- **Operational readiness:** CI, dependency/container scanning, SBOM
-  publication, load/fuzz testing, and externally validated network controls
-  remain future work.
+- **Operational readiness:** CI now runs the regression suite across the
+  declared Python versions, builds the package and container, audits runtime
+  dependencies, scans the image, and publishes an SPDX SBOM artifact. Load and
+  parser-fuzz testing plus externally validated network controls remain future
+  work; a passing CI scan is not a production security certification.
 
 ## Legal and ethical use
 

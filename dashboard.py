@@ -333,6 +333,7 @@ async def handle_client(reader, writer, db_path):
         else:
             status, mime, body = "404 Not Found", "text/plain", b"Not found"
 
+        # Only set CSP on HTML responses
         csp = ("default-src 'self'; "
                "script-src 'self'; "
                "style-src 'self' 'unsafe-inline'; "
@@ -341,12 +342,18 @@ async def handle_client(reader, writer, db_path):
                "frame-ancestors 'none'; "
                "base-uri 'none'; "
                "form-action 'none'")
-        writer.write((f"HTTP/1.1 {status}\r\nContent-Type: {mime}\r\n"
-                      f"Content-Length: {len(body)}\r\nCache-Control: no-store\r\n"
-                      "X-Content-Type-Options: nosniff\r\n"
-                      f"Content-Security-Policy: {csp}\r\n"
-                      "Referrer-Policy: no-referrer\r\n"
-                      "Connection: close\r\n\r\n").encode() + body)
+        headers = [
+            f"HTTP/1.1 {status}",
+            f"Content-Type: {mime}",
+            f"Content-Length: {len(body)}",
+            "Cache-Control: no-store",
+            "X-Content-Type-Options: nosniff",
+            "Referrer-Policy: no-referrer",
+            "Connection: close",
+        ]
+        if mime.startswith("text/html"):
+            headers.append(f"Content-Security-Policy: {csp}")
+        writer.write(("\r\n".join(headers) + "\r\n\r\n").encode() + body)
         await writer.drain()
     except (TimeoutError, ValueError, ConnectionError, OSError, sqlite3.Error) as exc:
         log.debug("Dashboard request error from %s: %s", client_ip, exc)
