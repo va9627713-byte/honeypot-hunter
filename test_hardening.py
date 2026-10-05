@@ -25,7 +25,7 @@ from check_ports import check_port
 from dashboard import handle_client, load_summary
 from honeypot import DEFAULT_CONFIG, Honeypot, load_config
 from local_llm import _NoRedirectHandler as LlmNoRedirectHandler
-from local_llm import generate_shell_output, validate_local_llm_url
+from local_llm import classify_attack_event, generate_shell_output, validate_local_llm_url
 from report import _safe_terminal_text, print_report
 from simulate_attacks import PROBES
 from simulate_attacks import run as run_simulator
@@ -367,6 +367,50 @@ class ArtifactAnalysisTests(unittest.TestCase):
             ))
         self.assertEqual(output, "simulated output")
         generate.assert_called_once()
+
+    def test_local_event_classifier_returns_validated_advisory(self):
+        response = json.dumps({
+            "category": "reconnaissance",
+            "confidence": 80,
+            "rationale": "Service discovery was attempted.",
+        })
+        with patch("local_llm._generate", return_value=response) as generate:
+            result = classify_attack_event(
+                "http://127.0.0.1:11434/api/generate",
+                "test-model",
+                {"service": "http", "event_type": "http_recon", "detail": {}},
+            )
+
+        self.assertEqual(result["category"], "reconnaissance")
+        self.assertEqual(result["confidence"], 80)
+        self.assertIn("triage only", result["caveat"])
+        self.assertIn("untrusted attacker-controlled data", generate.call_args.args[2])
+
+    def test_local_event_classifier_rejects_invalid_model_outputs(self):
+        invalid_responses = (
+            "not json",
+            "[]",
+            json.dumps({"category": [], "confidence": 50, "rationale": "x"}),
+            json.dumps({"category": "other", "confidence": True, "rationale": "x"}),
+            json.dumps({"category": "other", "confidence": 50, "rationale": "\n"}),
+        )
+        for response in invalid_responses:
+            with self.subTest(response=response), patch(
+                "local_llm._generate", return_value=response
+            ), self.assertRaises((TypeError, ValueError)):
+                classify_attack_event(
+                    "http://127.0.0.1:11434/api/generate",
+                    "test-model",
+                    {"service": "http", "event_type": "http_recon", "detail": {}},
+                )
+
+    def test_local_event_classifier_rejects_non_local_endpoint(self):
+        with self.assertRaisesRegex(ValueError, "loopback"):
+            classify_attack_event(
+                "http://example.com/api/generate",
+                "test-model",
+                {"service": "http", "event_type": "connection", "detail": {}},
+            )
 
 
 class ReportOutputTests(unittest.TestCase):

@@ -28,7 +28,7 @@ honeypot.py    → asyncio server exposing eleven fake services
 ti_logger.py   → hash-chained JSONL + SQLite, optional GeoIP and alerts
 system_state.py → deployment-specific synthetic system state
 artifact_analysis.py → bounded static triage and optional isolated-sandbox handoff
-local_llm.py   → loopback-only optional command-output generation
+local_llm.py   → optional local command-output generation and event classification
 dashboard.py  → read-only local dashboard and summary API
 report.py      → terminal summary and IOC export
 simulate_attacks.py → harmless local-only test traffic
@@ -39,6 +39,13 @@ Its HTML is served separately from same-origin JavaScript, event values are
 rendered with text nodes, and SQLite work runs outside the asyncio event loop.
 The dashboard rate limit applies only to summary API requests, leaving page
 assets and health checks available during repeated refreshes.
+The dashboard polls every five seconds; the event feed is current telemetry,
+not a traffic generator. Run `python simulate_attacks.py` separately for safe
+loopback-only demo traffic. Optional event classification can be enabled with
+`python dashboard.py --enable-local-ai-classification`; it sends only the
+selected event evidence to the configured local Ollama endpoint. Classification
+is off by default, is advisory, and is not a substitute for analyst review.
+The dashboard can download a JSON incident snapshot for the selected filters.
 
 **Only the SSH transport is real.** SSH uses AsyncSSH for key exchange and
 password authentication by default, but accepts credentials and presents only
@@ -152,6 +159,7 @@ pip install -r requirements.txt
 python3 honeypot.py                    # uses built-in default ports
 python3 honeypot.py --config config.yaml
 python3 dashboard.py                  # http://127.0.0.1:8765
+python3 dashboard.py --enable-local-ai-classification  # optional local Ollama triage
 python3 check_ports.py --config config.yaml
 ```
 
