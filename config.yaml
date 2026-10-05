@@ -1,0 +1,87 @@
+# Honeypot configuration
+# Safe default: listen locally. Set to 0.0.0.0 only on an isolated, authorized host.
+bind_host: 127.0.0.1
+max_connections: 100
+max_request_headers: 100
+rate_limit_connections: 30
+rate_limit_window_seconds: 60
+max_rate_limit_sources: 10000
+# GeoIP is offline-only; point this at a licensed MaxMind GeoLite2-City.mmdb file.
+geoip_db_path: null
+# Alerts are disabled unless a webhook URL is configured. Treat webhook URLs as secrets.
+alert_webhook: null
+alert_event_types:
+  - auth_success_fake
+  - http_exploit_attempt
+  - payload_upload
+  - escape_attempt
+# 0 disables the local persistent denylist; this never edits system firewall rules.
+auto_block_score: 0
+# Unknown shell commands can use a local Ollama-compatible model. No external
+# model endpoint is accepted; disabled by default.
+llm_enabled: false
+llm_endpoint: http://127.0.0.1:11434/api/generate
+llm_model: qwen2.5:3b
+# Submitted samples are never executed here. Set an isolated analyzer endpoint
+# only when its network and retention policy are understood.
+sandbox_submit_url: null
+sandbox_auth_token_env: null
+max_sample_size: 2097152
+system_seed: null
+enable_mitre_tagging: true
+anti_pollution: true
+pollution_threshold: 100
+randomize_banners: true
+# Ports below are unprivileged (>1024) so the tool runs without root.
+# To catch real internet scanner traffic on standard ports (22/23/21/80),
+# forward those ports to these via your firewall/NAT/iptables, e.g.:
+#   iptables -t nat -A PREROUTING -p tcp --dport 22 -j REDIRECT --to-port 2222
+
+services:
+  ssh:
+    enabled: true
+    port: 2222
+    banner: "SSH-2.0-OpenSSH_8.9p1 Ubuntu-3"
+    real_ssh: true
+    credential_retention: hashed
+    host_key_path: null
+  telnet:
+    enabled: true
+    port: 2323
+    banner: "Ubuntu 22.04 LTS"
+  ftp:
+    enabled: true
+    port: 2121
+    banner: "220 (vsFTPd 3.0.5)"
+  http:
+    enabled: true
+    port: 8080
+    server_header: "Apache/2.4.52 (Ubuntu)"
+  mysql:
+    enabled: true
+    port: 13306
+    banner: "8.0.36-honeypot"
+  redis:
+    enabled: true
+    port: 16379
+    banner: "7.2.4"
+  smtp:
+    enabled: true
+    port: 12525
+    hostname: "mail.local"
+  docker:
+    enabled: true
+    port: 2375
+  kubernetes:
+    enabled: true
+    port: 6443
+  modbus:
+    enabled: true
+    port: 1502
+    unit_id: 1
+  mqtt:
+    enabled: true
+    port: 1883
+
+max_session_seconds: 60
+fake_login_fail_count: 3

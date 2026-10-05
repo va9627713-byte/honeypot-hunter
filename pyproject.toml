@@ -1,0 +1,201 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "honeypot-hunter"
+version = "2.0.0"
+description = "Custom multi-service honeypot with threat intelligence logging"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.11"
+authors = [
+    {name = "Honeypot Hunter Contributors", email = "security@honeypot-hunter.example.com"}
+]
+maintainers = [
+    {name = "Honeypot Hunter Maintainers", email = "maintainers@honeypot-hunter.example.com"}
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: System Administrators",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Security",
+    "Topic :: System :: Networking :: Monitoring",
+    "Topic :: System :: Systems Administration",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: MacOS",
+    "Environment :: Console",
+    "Environment :: No Input/Output (Daemon)",
+]
+dependencies = [
+    "pyyaml>=6.0,<7",
+    "asyncssh>=2.14,<3",
+    "cryptography>=42.0,<43",
+]
+
+[project.optional-dependencies]
+geoip = ["geoip2>=4.8,<5"]
+dev = [
+    "pytest>=7.0,<8",
+    "pytest-asyncio>=0.21,<1",
+    "pytest-cov>=4.0,<5",
+    "black>=23.0,<24",
+    "ruff>=0.1,<1",
+    "mypy>=1.0,<2",
+    "types-requests",
+    "types-urllib3",
+    "bandit>=1.7,<2",
+    "safety>=2.0,<3",
+    "detect-secrets>=1.5,<2",
+    "pre-commit>=3.0,<4",
+]
+docs = ["mkdocs-material>=9.0,<10", "mkdocstrings[python]>=0.24,<1"]
+llm = ["httpx>=0.25,<1"]
+sandbox = ["aiohttp>=3.8,<4"]
+all = ["geoip2>=4.8,<5", "httpx>=0.25,<1", "aiohttp>=3.8,<4"]
+
+[project.scripts]
+honeypot = "honeypot:main"
+dashboard = "dashboard:main"
+report = "report:main"
+simulate = "simulate_attacks:main"
+check-ports = "check_ports:main"
+
+[tool.setuptools]
+py-modules = [
+    "artifact_analysis",
+    "check_ports",
+    "dashboard",
+    "honeypot",
+    "local_llm",
+    "report",
+    "simulate_attacks",
+    "system_state",
+    "ti_logger",
+]
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+include = "\\.pyi?$"
+extend-exclude = '''
+/(
+  # directories
+  \\.venv
+  | __pycache__
+  | \\.git
+  | enterprise
+)
+/'''
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["."]
+
+[tool.ruff.lint]
+select = [
+    "E",
+    "W",
+    "F",
+    "I",
+    "N",
+    "UP",
+    "B",
+    "C4",
+    "T20",
+    "S",
+    "PTH",
+    "TRY",
+    "SIM",
+    "C90",
+]
+ignore = [
+    "E501",
+    "B008",
+    "T201",
+    "S101",
+    "S311",
+    "PTH118",
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "lf"
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+implicit_reexport = true
+strict_equality = true
+enable_error_code = ["ignore-without-action", "attr-defined"]
+
+[[tool.mypy.overrides]]
+module = [
+    "test_*",
+    "conftest",
+    "*_test",
+]
+disallow_untyped_defs = false
+ignore_errors = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["test_hardening.py"]
+python_files = ["test_*.py"]
+python_classes = ["*Tests"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short --strict-markers"
+markers = [
+    "slow: marks tests as slow",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+]
+
+[tool.coverage.run]
+source = ["."]
+omit = [
+    "test_*",
+    "*/test_*",
+    "*/conftest.py",
+    "*/migrations/*",
+    "enterprise/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+]
+
+[tool.pre-commit]
+repo = "local"
+hooks = [
+    {id = "black", name = "black", entry = "black", language = "system", types = ["python"]},
+    {id = "ruff", name = "ruff", entry = "ruff check --fix", language = "system", types = ["python"]},
+    {id = "mypy", name = "mypy", entry = "mypy", language = "system", types = ["python"]},
+    {id = "pytest", name = "pytest", entry = "pytest -x", language = "system", types = ["python"]},
+    {id = "detect-secrets", name = "detect-secrets", entry = "detect-secrets scan --all-files --exclude-files \"test_.*\\.py$\"", language = "system", types = ["python"]},
+]

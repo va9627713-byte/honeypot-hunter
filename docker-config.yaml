@@ -1,0 +1,43 @@
+# Docker config - binds to 0.0.0.0 inside container, but host ports are mapped to 127.0.0.1
+# via docker-compose.yml. Only change bind_host if you understand the security implications.
+bind_host: 0.0.0.0
+max_connections: 100
+max_request_headers: 100
+rate_limit_connections: 30
+rate_limit_window_seconds: 60
+max_rate_limit_sources: 10000
+geoip_db_path: null
+alert_webhook: null
+alert_event_types:
+  - auth_success_fake
+  - http_exploit_attempt
+  - payload_upload
+  - docker.command
+  - kubernetes.command
+  - escape_attempt
+auto_block_score: 0
+llm_enabled: false
+llm_endpoint: http://ollama:11434/api/generate
+llm_model: qwen2.5:3b
+sandbox_submit_url: null
+sandbox_auth_token_env: null
+max_sample_size: 2097152
+system_seed: null
+enable_mitre_tagging: true
+anti_pollution: true
+pollution_threshold: 100
+randomize_banners: true
+max_session_seconds: 60
+fake_login_fail_count: 3
+services:
+  ssh: {enabled: true, port: 2222, banner: "SSH-2.0-OpenSSH_8.9p1 Ubuntu-3"}
+  telnet: {enabled: true, port: 2323, banner: "Ubuntu 22.04 LTS"}
+  ftp: {enabled: true, port: 2121, banner: "220 (vsFTPd 3.0.5)"}
+  http: {enabled: true, port: 8080, server_header: "Apache/2.4.52 (Ubuntu)"}
+  mysql: {enabled: true, port: 3306, banner: "8.0.36-honeypot"}
+  redis: {enabled: true, port: 6379, banner: "7.2.4"}
+  smtp: {enabled: true, port: 2525, hostname: "mail.local"}
+  docker: {enabled: true, port: 2375, api_version: "1.44"}
+  kubernetes: {enabled: true, port: 6443, version: "v1.28.3"}
+  modbus: {enabled: true, port: 1502, unit_id: 1}
+  mqtt: {enabled: true, port: 1883, broker_name: "mosquitto-1"}

@@ -1,0 +1,210 @@
+# Production Configuration
+# Copy to config.prod.yaml and customize for your deployment
+# NEVER commit this file with real secrets to version control
+
+# Core settings
+bind_host: "0.0.0.0"  # Listen on all interfaces
+environment: "production"
+debug: false
+secret_key: ""  # Set via HONEYPOT_SECRET_KEY env var or secrets file
+
+# Database (use PostgreSQL for production)
+database:
+  type: "postgresql"
+  host: "postgres"
+  port: 5432
+  database: "honeypot"
+  username: "honeypot"
+  password: ""  # Set via HONEYPOT_DATABASE_PASSWORD secret
+  pool_size: 20
+  max_overflow: 10
+  pool_timeout: 30
+  pool_recycle: 3600
+  ssl_mode: "require"
+  auto_migrate: true
+  backup_enabled: true
+  backup_interval_hours: 24
+  backup_retention_days: 30
+
+# TLS Configuration
+tls:
+  enabled: true
+  cert_file: "/etc/honeypot/certs/server.crt"
+  key_file: "/etc/honeypot/certs/server.key"
+  ca_file: "/etc/honeypot/certs/ca.crt"
+  auto_generate: false
+  min_version: "1.3"
+  cipher_suites:
+    - "TLS_AES_256_GCM_SHA384"
+    - "TLS_CHACHA20_POLY1305_SHA256"
+    - "TLS_AES_128_GCM_SHA256"
+
+# Authentication
+auth:
+  provider: "api_key"
+  api_keys:
+    "admin-key-123": ["admin", "analyst"]
+    "analyst-key-456": ["analyst"]
+  session_timeout_minutes: 60
+  rate_limit_requests: 100
+  rate_limit_window_seconds: 60
+  lockout_threshold: 5
+  lockout_duration_minutes: 15
+  password_min_length: 16
+  mfa_enabled: false
+
+# Network
+network:
+  bind_host: "0.0.0.0"
+  bind_port: 8080
+  workers: 4
+  max_connections: 10000
+  rate_limit_requests: 1000
+  rate_limit_window: 60
+  cors_origins: []
+  cors_methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+  cors_headers: ["*"]
+  cors_credentials: false
+
+# Services Configuration
+services:
+  ssh:
+    enabled: true
+    port: 2222
+    banner: "SSH-2.0-OpenSSH_8.9p1 Ubuntu-3ubuntu0.1"
+    real_ssh: true
+    credential_retention: "hashed"
+    host_key_path: "/app/ssh_host_key"
+  telnet:
+    enabled: true
+    port: 2323
+    banner: "Ubuntu 22.04.3 LTS"
+  ftp:
+    enabled: true
+    port: 2121
+    banner: "220 (vsFTPd 3.0.5)"
+  http:
+    enabled: true
+    port: 8080
+    server_header: "Apache/2.4.52 (Ubuntu)"
+  mysql:
+    enabled: true
+    port: 3306
+    banner: "8.0.36-honeypot"
+  redis:
+    enabled: true
+    port: 6379
+    banner: "7.2.4"
+  smtp:
+    enabled: true
+    port: 2525
+    hostname: "mail.local"
+  docker:
+    enabled: true
+    port: 2375
+    api_version: "1.44"
+  kubernetes:
+    enabled: true
+    port: 6443
+    version: "v1.28.3"
+  modbus:
+    enabled: true
+    port: 1502
+    unit_id: 1
+  mqtt:
+    enabled: true
+    port: 1883
+    broker_name: "mosquitto-1"
+
+# Monitoring
+monitoring:
+  prometheus_enabled: true
+  prometheus_port: 9090
+  prometheus_path: "/metrics"
+  opentelemetry_enabled: true
+  opentelemetry_endpoint: "http://otel-collector:4317"
+  opentelemetry_service_name: "honeypot-hunter"
+  opentelemetry_sample_rate: 0.1
+  logging_level: "INFO"
+  logging_format: "json"
+  logging_output: "stdout"
+  structured_logging: true
+  audit_logging: true
+  audit_log_path: "/var/log/honeypot/audit.log"
+  health_check_interval: 30
+  alerting_enabled: true
+  alert_rules_path: "alerts/rules.yml"
+  notification_webhooks:
+    - "https://hooks.slack.com/services/XXX/XXX/XXX"
+
+# Export
+export:
+  enabled: true
+  formats: ["json", "stix", "cef", "elasticsearch"]
+  elasticsearch_hosts: ["https://elasticsearch:9200"]
+  elasticsearch_index: "honeypot-events"
+  elasticsearch_username: "honeypot"
+  elasticsearch_password: ""  # Set via secret
+  kafka_bootstrap_servers: ["kafka:9092"]
+  kafka_topic: "honeypot-events"
+  export_interval_seconds: 60
+  batch_size: 1000
+
+# Retention
+retention:
+  enabled: true
+  raw_events_days: 90
+  enriched_events_days: 365
+  artifacts_days: 30
+  logs_days: 90
+  audit_logs_days: 365
+  backups_days: 30
+  purge_schedule: "0 2 * * *"
+  archive_before_purge: true
+  archive_storage: "s3://honeypot-archive"
+  gdpr_compliance: true
+
+# Sensor/Collector
+sensor:
+  sensor_id: ""
+  sensor_name: ""
+  sensor_location: ""
+  collector_endpoint: "https://collector.example.com:50051"
+  heartbeat_interval: 30
+  batch_size: 100
+  compression: true
+  encryption: true
+
+collector:
+  enabled: true
+  bind_host: "0.0.0.0"
+  grpc_port: 50051
+  http_port: 8081
+  max_concurrent_sensors: 1000
+  replication_factor: 3
+  leader_election: true
+
+# HA
+ha:
+  enabled: false
+  mode: "active-passive"
+  cluster_name: "honeypot-cluster"
+  node_id: ""
+  peer_nodes: []
+  vip_address: ""
+  health_check_interval: 5
+  failover_timeout: 10
+
+# Feature flags
+features:
+  real_ssh: true
+  artifact_analysis: true
+  llm_integration: false
+  behavior_clustering: true
+  mitre_tagging: true
+  anti_pollution: true
+  threat_intel_enrichment: true
+  auto_block: false
+  sensor_mode: false
+  collector_mode: false
+  ha_mode: false

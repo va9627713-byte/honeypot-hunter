@@ -1,0 +1,3 @@
+pyyaml>=6.0,<7
+asyncssh>=2.14,<3
+cryptography>=42.0,<43

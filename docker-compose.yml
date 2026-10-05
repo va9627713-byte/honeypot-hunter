@@ -1,0 +1,98 @@
+services:
+  honeypot:
+    build:
+      context: .
+      args:
+        INSTALL_GEOIP: ${INSTALL_GEOIP:-false}
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+    volumes:
+      - honeypot-logs:/app/logs
+    networks:
+      - honeypot-isolated
+    mem_limit: 512m
+    cpus: 1.0
+    pids_limit: 128
+    ports:
+      - "127.0.0.1:2222:2222"
+      - "127.0.0.1:2323:2323"
+      - "127.0.0.1:2121:2121"
+      - "127.0.0.1:8080:8080"
+      - "127.0.0.1:3306:3306"
+      - "127.0.0.1:6379:6379"
+      - "127.0.0.1:2525:2525"
+      - "127.0.0.1:2375:2375"
+      - "127.0.0.1:6443:6443"
+      - "127.0.0.1:1502:1502"
+      - "127.0.0.1:1883:1883"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s = socket.socket(); s.settimeout(2); s.connect(('127.0.0.1', 8080)); s.close()"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  dashboard:
+    build:
+      context: .
+      args:
+        INSTALL_GEOIP: ${INSTALL_GEOIP:-false}
+    command: ["python", "dashboard.py", "--host", "0.0.0.0", "--port", "8765"]
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+    volumes:
+      - honeypot-logs:/app/logs:ro
+    networks:
+      - honeypot-isolated
+    mem_limit: 256m
+    cpus: 0.5
+    pids_limit: 64
+    ports:
+      - "127.0.0.1:8765:8765"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8765/health', timeout=2)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  ollama:
+    image: ollama/ollama:0.1.46
+    profiles: ["llm"]
+    environment:
+      OLLAMA_HOST: 0.0.0.0:11434
+    restart: unless-stopped
+    read_only: false
+    volumes:
+      - ollama-models:/root/.ollama
+    networks:
+      - honeypot-isolated
+      - ollama-egress
+    mem_limit: 5g
+    cpus: 2.0
+    pids_limit: 128
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+volumes:
+  honeypot-logs:
+  ollama-models:
+
+networks:
+  honeypot-isolated:
+    internal: false
+  ollama-egress:
